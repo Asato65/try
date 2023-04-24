@@ -2,6 +2,7 @@ counter = $00
 controller = $01
 is_end_nmi = $02
 countdown = $03
+inc_speed = $04
 frame_counter = $ff
 
 

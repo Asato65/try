@@ -46,6 +46,9 @@
 	lda #%00011110						; すべて表示
 	sta $2001
 
+	lda #%00000111
+	sta inc_speed
+
 MAINLOOP:
 	lda is_end_nmi
 	beq MAINLOOP
@@ -54,23 +57,23 @@ MAINLOOP:
 	lda #$00
 	sta is_end_nmi
 	sta controller
-	sta $f0
-	sta $f1
 
 	ldx frame_counter
 	inx
 	stx frame_counter
 	txa
-	and #%00000111
+	and inc_speed
 	bne @SKIP_INC_COUNTER
 	jsr incCounter
 @SKIP_INC_COUNTER:
 
 	jsr getController					; コントローラーの情報を取得
 	isPushedKey 'A'
-	bne @NOT_PUSH_A
+	beq @NOT_PUSH_A
 	lda #120
 	sta countdown
+	lda #%00001111
+	sta inc_speed
 @NOT_PUSH_A:
 
 	; メインプログラム終了
