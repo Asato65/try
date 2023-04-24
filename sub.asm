@@ -23,6 +23,35 @@ frame_counter = $ff
 .endmacro
 
 
+.macro initRam
+	ldx #$00
+	txa
+INIT_ZEROPAGE:
+	sta $00, x
+	dex
+	bne INIT_ZEROPAGE
+
+INIT_STACK:
+	sta $0100, x
+	dex
+	bne INIT_STACK
+
+	lda #$20
+	sta $2006
+	lda #$00
+	sta $2006
+	ldx #$00
+	ldy #$08
+@INIT_VRAM_LOOP2:
+@INIT_VRAM_LOOP1:
+	sta $2007
+	dex
+	bne @INIT_VRAM_LOOP1
+	dey
+	bne @INIT_VRAM_LOOP2
+.endmacro
+
+
 drawImage:
 	lda #$21
 	sta $2006
