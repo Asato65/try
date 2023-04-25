@@ -3,11 +3,16 @@ controller = $01
 is_end_nmi = $02
 countdown = $03
 inc_speed = $04
+stopflag = $05
+prev_controller = $06
 frame_counter = $ff
 
 
-.macro isPushedKey key
-	lda controller
+.macro getPushedKey key
+	lda prev_controller
+	eor #$ff
+	and controller
+
 	.if (key = 'A')
 		and #%10000000
 	.elseif (key = 'B')
@@ -106,6 +111,9 @@ drawImage:
 
 
 getController:
+	lda controller
+	sta prev_controller
+
 	ldx #$01							; コントローラー初期化
 	stx $4016
 	dex

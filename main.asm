@@ -33,7 +33,11 @@
 	sta $2006
 	lda #$00
 	sta $2006
+	lda #$20
+	sta $2007
 	lda #$0f
+	sta $2007
+	lda #$36
 	sta $2007
 
 	lda #$00
@@ -56,7 +60,7 @@ MAINLOOP:
 	; メインプログラム
 	lda #$00
 	sta is_end_nmi
-	sta controller
+	jsr getController					; コントローラーの情報を取得
 
 	ldx frame_counter
 	inx
@@ -64,17 +68,38 @@ MAINLOOP:
 	txa
 	and inc_speed
 	bne @SKIP_INC_COUNTER
+	lda stopflag
+	bne @SKIP_INC_COUNTER
 	jsr incCounter
 @SKIP_INC_COUNTER:
 
-	jsr getController					; コントローラーの情報を取得
-	isPushedKey 'A'
-	beq @NOT_PUSH_A
-	lda #120
-	sta countdown
-	lda #%00001111
+	ldx countdown
+	beq @SKIP_DEC_COUNTDOWN
+	dex
+	stx countdown
+	bne @END							; カウントを-1したら終了
+	lda #$01							; カウントダウンして値が0になったらフラグを立てる
+	sta stopflag
+	jmp @END
+@SKIP_DEC_COUNTDOWN:
+	lda stopflag
+	beq @CHECK_ISSTART
+	getPushedKey 'A'
+	beq @CHECK_ISSTART
+	lda #$00							; ストップ中でAボタンが押されていたらルーレット開始
+	sta stopflag
+	sta counter
+	lda #%00000111
 	sta inc_speed
-@NOT_PUSH_A:
+	jmp @END
+@CHECK_ISSTART:
+	getPushedKey 'A'
+	beq @END
+	lda #120							; Aボタンが押されていたらカウントダウンをセット
+	sta countdown
+	lda #%00001111						; 速度遅くする
+	sta inc_speed
+@END:
 
 	; メインプログラム終了
 
