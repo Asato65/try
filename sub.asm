@@ -1,9 +1,9 @@
-counter = $00
+choice = $00
 controller = $01
 is_end_nmi = $02
-countdown = $03
-inc_speed = $04
-stopflag = $05
+counter = $03
+speed = $04
+state = $05
 prev_controller = $06
 frame_counter = $ff
 
@@ -29,7 +29,19 @@ frame_counter = $ff
 .endmacro
 
 
-.macro initRam
+.macro init
+	sei									; IRQ禁止
+	cld									; BCDオフ
+
+	; PPU初期化
+	lda #%00001000
+	sta $2000
+	lda #%00000000
+	sta $2001
+
+	ldx #$ff
+	txs
+
 	ldx #$00
 	txa
 INIT_ZEROPAGE:
@@ -55,10 +67,59 @@ INIT_STACK:
 	bne @INIT_VRAM_LOOP1
 	dey
 	bne @INIT_VRAM_LOOP2
+
+	; パレットテーブルの転送
+	lda #$3f
+	sta $2006
+	lda #$00
+	sta $2006
+	lda #$20
+	sta $2007
+	lda #$0f
+	sta $2007
+	lda #$36
+	sta $2007
+
+	lda #$00
+	sta $2005
+	sta $2005
+
+	; スクリーンON
+	lda #%10001000						; NMI-ON, SPR=$1000
+	sta $2000
+	lda #%00011110						; すべて表示
+	sta $2001
+.endmacro
+
+
+.macro waitUpdatingDisp
+	lda is_end_nmi
+	beq MAINLOOP
+.endmacro
+
+
+.macro escapeRegister
+	php
+	pha
+	txa
+	pha
+	tya
+	pha
+.endmacro
+
+
+.macro restoreRegister
+	pla
+	tay
+	pla
+	tax
+	pla
+	plp
 .endmacro
 
 
 drawImage:
+	jsr getComputerChoice
 	lda #$21
 	sta $2006
 	lda #$ae
@@ -131,19 +192,19 @@ getController:
 	rts  ; -----------------------------
 
 
-incCounter:
-	ldx counter
+changeChoice:
+	ldx choice
 	inx
 	cpx #$03
 	bne @SKIP1
 	ldx #$00
 @SKIP1:
-	stx counter
+	stx choice
 	rts  ; -----------------------------
 
 
-getRockPaperScissors:
-	ldx counter
+getComputerChoice:
+	ldx choice
 	beq @ROCK
 	cpx #$01
 	beq @SCISSORS
