@@ -44,26 +44,53 @@ SKIP_INC_COUNTER:
 	bne SKIP_DEC_COUNTDOWN
 	; ルーレットがゆっくりになっている時実行
 	dec counter
-	bne END							; カウントダウンして値が0でなければ終了
+	bne END								; カウントダウンして値が0でなければ終了
 	; カウントダウンして値が0になったら
 	lda #$00
 	sta state							; ルーレット停止
+	lda playerChoice
+	asl
+	clc
+	adc playerChoice
+	clc
+	adc computerChoice
+	tax
+	lda table, x
+	sta result
 	jmp END
 SKIP_DEC_COUNTDOWN:
 	lda state
 	bne CHECK_ISSTART
-	getPushedKey 'A'
+	getPushedKey 'T'
 	beq CHECK_ISSTART
-	lda #$01							; ストップ中でAボタンが押されていたらルーレット開始
+	; ストップ中でSTARTボタン(T)が押されていたらルーレット開始
+	lda #$01
 	sta state
 	lda #$00
-	sta choice
+	sta computerChoice
+	sta result
 	lda #%00000111
 	sta speed
 	jmp END
 CHECK_ISSTART:
-	getPushedKey 'A'
+	getPushedKey 'L'
+	beq CHECK_U
+	lda #$00
+	sta playerChoice
+	jmp SLOWDOWN_ROULETTE
+CHECK_U:
+	getPushedKey 'U'
+	beq CHECK_R
+	lda #$01
+	sta playerChoice
+	jmp SLOWDOWN_ROULETTE
+CHECK_R:
+	getPushedKey 'R'
 	beq END
+	lda #$02
+	sta playerChoice
+SLOWDOWN_ROULETTE:
+	; ルーレット中にAボタンが押されたら
 	lda #120							; Aボタンが押されていたらカウントダウンをセット
 	sta counter
 	lda #%00001111						; 速度遅くする
@@ -71,13 +98,19 @@ CHECK_ISSTART:
 	lda #$02
 	sta state
 END:
-
 	; メインプログラム終了
 
 	jmp MAINLOOP
 
 .endproc
 
+; win = 1, lose = 2, draw = 3
+; cp = x, player = y
+; table[3 * playerChoice + computerChoice]
+table:
+	.byte 3, 1, 2
+	.byte 2, 3, 1
+	.byte 1, 2, 3
 
 .proc NMI
 	; ------------ 画面描画 -------------

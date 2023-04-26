@@ -1,10 +1,12 @@
-choice = $00
-controller = $01
+controller = $00
+prev_controller = $01
 is_end_nmi = $02
 counter = $03
 speed = $04
 state = $05
-prev_controller = $06
+computerChoice = $06
+playerChoice = $07
+result = $08
 frame_counter = $ff
 
 
@@ -17,6 +19,10 @@ frame_counter = $ff
 		and #%10000000
 	.elseif (key = 'B')
 		and #%01000000
+	.elseif (key = 'S')
+		and #%00100000
+	.elseif (key = 'T')
+		and #%00010000
 	.elseif (key = 'U')
 		and #%00001000
 	.elseif (key = 'D')
@@ -193,18 +199,18 @@ getController:
 
 
 changeChoice:
-	ldx choice
+	ldx computerChoice
 	inx
 	cpx #$03
 	bne @SKIP1
 	ldx #$00
 @SKIP1:
-	stx choice
+	stx computerChoice
 	rts  ; -----------------------------
 
 
 getComputerChoice:
-	ldx choice
+	ldx computerChoice
 	beq @ROCK
 	cpx #$01
 	beq @SCISSORS
