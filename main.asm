@@ -1,6 +1,7 @@
 .setcpu "6502"
 .autoimport on
 
+.include "data.asm"
 .include "sub.asm"
 
 .segment "HEADER"
@@ -25,7 +26,7 @@
 MAINLOOP:
 	waitUpdatingDisp					; 画面が更新されるまで待機
 
-	; メインプログラム
+	; -------- メインプログラム ---------
 	lda #$00
 	sta is_end_nmi						; 画面が更新されたフラグをOFFにする
 	jsr getController					; コントローラーの情報を取得
@@ -39,30 +40,18 @@ MAINLOOP:
 	jsr changeChoice					; 次の手に変更する
 SKIP_INC_COUNTER:
 
+	; 状態によって場合分け
 	lda state
-	cmp #$02
-	bne SKIP_DEC_COUNTDOWN
-	; ルーレットがゆっくりになっている時実行
-	dec counter
-	bne END								; カウントダウンして値が0でなければ終了
-	; カウントダウンして値が0になったら
-	lda #$00
-	sta state							; ルーレット停止
-	lda playerChoice
-	asl
-	clc
-	adc playerChoice
-	clc
-	adc computerChoice
-	tax
-	lda table, x
-	sta result
-	jmp END
-SKIP_DEC_COUNTDOWN:
-	lda state
-	bne CHECK_ISSTART
-	getPushedKey 'T'
 	beq CHECK_ISSTART
+	cmp #$01
+	beq CHECK_IS_CHOICE
+	cmp #$02
+	beq DEC_COUNTDOWN
+
+; state=0(停止中)のとき
+CHECK_ISSTART:
+	getPushedKey 'T'
+	beq END
 	; ストップ中でSTARTボタン(T)が押されていたらルーレット開始
 	lda #$01
 	sta state
@@ -72,7 +61,9 @@ SKIP_DEC_COUNTDOWN:
 	lda #%00000111
 	sta speed
 	jmp END
-CHECK_ISSTART:
+
+; state=1(ルーレット中)のとき
+CHECK_IS_CHOICE:
 	getPushedKey 'L'
 	beq CHECK_U
 	lda #$00
@@ -97,28 +88,93 @@ SLOWDOWN_ROULETTE:
 	sta speed
 	lda #$02
 	sta state
+	jmp END
+
+; state=2(ルーレットゆっくり)のとき
+DEC_COUNTDOWN:
+	; ルーレットがゆっくりになっている時実行
+	dec counter
+	bne END								; カウントダウンして値が0でなければ終了
+	; カウントダウンして値が0になったら
+	lda #$00
+	sta state							; ルーレット停止
+	lda playerChoice
+	asl
+	clc
+	adc playerChoice					; playerChoiceを3倍する
+	clc
+	adc computerChoice
+	tax
+	lda table, x
+	sta result
+
 END:
-	; メインプログラム終了
+	; ------- メインプログラム終了 -------
 
 	jmp MAINLOOP
-
 .endproc
 
-; win = 1, lose = 2, draw = 3
-; cp = x, player = y
-; table[3 * playerChoice + computerChoice]
-table:
-	.byte 3, 1, 2
-	.byte 2, 3, 1
-	.byte 1, 2, 3
 
 .proc NMI
 	; ------------ 画面描画 -------------
+
+	; ルーレット中の文字表示
+	lda #$20
+	sta $2006
+	lda #$20
+	sta $2006
+	lda #$00
+	ldx #$20
+INIT_TEXT:
+	sta $2007
+	dex
+	bne INIT_TEXT
+
+	lda state
+	beq STOP_DISP
+	cmp #$01
+	beq ROULETTE_DISP
+	bne DRAW_IMAGE
+STOP_DISP:
+	; 停止中の文字表示
+	lda #$20
+	sta $2006
+	lda #$3b
+	sta $2006
+	lda #'S'
+	sta $2007
+	lda #'T'
+	sta $2007
+	lda #'O'
+	sta $2007
+	lda #'P'
+	sta $2007
+	jmp DRAW_IMAGE
+ROULETTE_DISP:
+	ldx #$00
+	lda roulette_text, x
+	sta $2006
+	inx
+	lda roulette_text, x
+	sta $2006
+	inx
+	lda roulette_text, x
+	tay
+LOOP1:
+	inx
+	lda roulette_text, x
+	sta $2007
+	dey
+	bne LOOP1
+
+DRAW_IMAGE:
 	jsr drawImage						; Xレジスタを引数に持つ
 
 	; 画面を更新したフラグをONにする
 	lda #$01
 	sta is_end_nmi
+
+	; ---------- 画面描画終了 -----------
 
 	rti									; 終了
 .endproc
