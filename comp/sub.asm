@@ -1,3 +1,15 @@
+controller = $00
+prev_controller = $01
+is_end_nmi = $02
+counter = $03
+speed = $04
+state = $05
+computerChoice = $06
+playerChoice = $07
+result = $08
+frame_counter = $ff
+
+
 .macro getPushedKey key
 	lda prev_controller
 	eor #$ff
