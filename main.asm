@@ -2,6 +2,7 @@
 .autoimport on
 
 .include "sub.asm"
+.include "data.asm"
 
 .segment "HEADER"
 	.byte $4e, $45, $53, $1a
@@ -16,21 +17,19 @@
 .proc RESET
 	init
 
-	; 初期値をセット
-	lda #%00000111
-	sta speed
 	lda #$00
-	sta state							; 0: 停止中，1: ルーレット中，2: ルーレットゆっくり
+	sta $00
 
 MAINLOOP:
 	waitUpdatingDisp					; 画面が更新されるまで待機
 
 	lda #$00
 	sta is_end_nmi						; 画面が更新されたフラグをOFFにする
-	jsr getController					; コントローラーの情報を取得
+	getController						; コントローラーの情報を取得
+	inc frame_counter					; フレームカウンター（プログラム内で使う時間）を進める
 
 	; ----- メインプログラムここから -----
-
+	
 	; ----- メインプログラムここまで -----
 
 	jmp MAINLOOP
@@ -39,11 +38,56 @@ MAINLOOP:
 
 .proc NMI
 	; ---- 画面描画プログラムここから ----
+	lda #$20
+	sta PPUADDR
+	lda #$20
+	sta PPUADDR
+	lda #$00
+	ldx #$20
+INIT_TEXT:
+	sta PPUACCESS
+	dex
+	bne INIT_TEXT
+
+	lda $00
+	beq DISP1
+	cmp #$01
+	beq DISP2
+DISP1:
+	lda #$20
+	sta PPUADDR
+	lda #$24
+	sta PPUADDR
+	lda #'N'
+	sta PPUACCESS
+	lda #'I'
+	sta PPUACCESS
+	lda #'C'
+	sta PPUACCESS
+	lda #'E'
+	sta PPUACCESS
+	jmp DRAW_IMAGE
+DISP2:
+	ldx #$00
+	lda text, x
+	sta PPUADDR
+	inx
+	lda text, x
+	sta PPUADDR
+	inx
+	lda text, x
+	tay
+LOOP:
+	inx
+	lda text, x
+	sta PPUACCESS
+	dey
+	bne LOOP
 
 	; ---- 画面描画プログラムここまで ----
 
 DRAW_IMAGE:
-	jsr drawImage						; Xレジスタを引数に持つ
+	drawImage							; Xレジスタを引数に持つ
 
 	; 画面を更新したフラグをONにする
 	lda #$01

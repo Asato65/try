@@ -8,6 +8,6 @@ table:
 	.byte 1, 2, 3
 
 
-roulette_text:
+text:
 	.byte $20, $23, 25
 	.byte "<:ROCK >:PAPER ^:SCISSORS"

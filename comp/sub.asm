@@ -1,3 +1,6 @@
+PPUADDR				= $2006
+PPUACCESS			= $2007
+
 controller = $00
 prev_controller = $01
 is_end_nmi = $02
@@ -61,14 +64,14 @@ INIT_STACK:
 	bne INIT_STACK
 
 	lda #$20
-	sta $2006
+	sta PPUADDR
 	lda #$00
-	sta $2006
+	sta PPUADDR
 	ldx #$00
 	ldy #$08
 @INIT_VRAM_LOOP2:
 @INIT_VRAM_LOOP1:
-	sta $2007
+	sta PPUACCESS
 	dex
 	bne @INIT_VRAM_LOOP1
 	dey
@@ -76,15 +79,15 @@ INIT_STACK:
 
 	; パレットテーブルの転送
 	lda #$3f
-	sta $2006
+	sta PPUADDR
 	lda #$00
-	sta $2006
+	sta PPUADDR
 	lda #$20
-	sta $2007
+	sta PPUACCESS
 	lda #$0f
-	sta $2007
+	sta PPUACCESS
 	lda #$36
-	sta $2007
+	sta PPUACCESS
 
 	lda #$00
 	sta $2005
@@ -127,45 +130,45 @@ INIT_STACK:
 .macro drawImage
 	getComputerChoice
 	lda #$21
-	sta $2006
+	sta PPUADDR
 	lda #$ae
-	sta $2006
+	sta PPUADDR
 	ldy #$04
 @DRAW_IMAGE_LINE1:
-	stx $2007
+	stx PPUACCESS
 	inx
 	dey
 	bne @DRAW_IMAGE_LINE1
 
 	lda #$21
-	sta $2006
+	sta PPUADDR
 	lda #$ce
-	sta $2006
+	sta PPUADDR
 	ldy #$04
 @DRAW_IMAGE_LINE2:
-	stx $2007
+	stx PPUACCESS
 	inx
 	dey
 	bne @DRAW_IMAGE_LINE2
 
 	lda #$21
-	sta $2006
+	sta PPUADDR
 	lda #$ee
-	sta $2006
+	sta PPUADDR
 	ldy #$04
 @DRAW_IMAGE_LINE3:
-	stx $2007
+	stx PPUACCESS
 	inx
 	dey
 	bne @DRAW_IMAGE_LINE3
 
 	lda #$22
-	sta $2006
+	sta PPUADDR
 	lda #$0e
-	sta $2006
+	sta PPUADDR
 	ldy #$04
 @DRAW_IMAGE_LINE4:
-	stx $2007
+	stx PPUACCESS
 	inx
 	dey
 	bne @DRAW_IMAGE_LINE4

@@ -29,16 +29,16 @@ MAINLOOP:
 	lda #$00
 	sta is_end_nmi						; 画面が更新されたフラグをOFFにする
 	getController					; コントローラーの情報を取得
+	inc frame_counter					; フレームカウンター（プログラム内で使う時間）を進める
 
 	; ----- メインプログラムここから -----
 
-	inc frame_counter					; フレームカウンター（プログラム内で使う時間）を進める
 	lda frame_counter
 	and speed
 	bne SKIP_INC_COUNTER
 	lda state
 	beq SKIP_INC_COUNTER				; ルーレット停止中はCPの手を変更しない
-	changeChoice					; 次の手に変更する
+	changeChoice						; 次の手に変更する
 SKIP_INC_COUNTER:
 
 	; 状態によって場合分け
@@ -121,13 +121,13 @@ END:
 
 	; ルーレット中の文字表示
 	lda #$20
-	sta $2006
+	sta PPUADDR
 	lda #$20
-	sta $2006
+	sta PPUADDR
 	lda #$00
 	ldx #$20
 INIT_TEXT:
-	sta $2007
+	sta PPUACCESS
 	dex
 	bne INIT_TEXT
 
@@ -139,39 +139,39 @@ INIT_TEXT:
 STOP_DISP:
 	; 停止中の文字表示
 	lda #$20
-	sta $2006
+	sta PPUADDR
 	lda #$3b
-	sta $2006
+	sta PPUADDR
 	lda #'S'
-	sta $2007
+	sta PPUACCESS
 	lda #'T'
-	sta $2007
+	sta PPUACCESS
 	lda #'O'
-	sta $2007
+	sta PPUACCESS
 	lda #'P'
-	sta $2007
+	sta PPUACCESS
 	jmp DRAW_IMAGE
 ROULETTE_DISP:
 	ldx #$00
 	lda roulette_text, x
-	sta $2006
+	sta PPUADDR
 	inx
 	lda roulette_text, x
-	sta $2006
+	sta PPUADDR
 	inx
 	lda roulette_text, x
 	tay
 LOOP1:
 	inx
 	lda roulette_text, x
-	sta $2007
+	sta PPUACCESS
 	dey
 	bne LOOP1
 
 	; ---- 画面描画プログラムここまで ----
 
 DRAW_IMAGE:
-	drawImage						; Xレジスタを引数に持つ
+	drawImage							; Xレジスタを引数に持つ
 
 	; 画面を更新したフラグをONにする
 	lda #$01
